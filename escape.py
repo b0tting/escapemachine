@@ -116,7 +116,7 @@ def play_sound(soundpath):
 
 
 def get_sounds_from_folder(dir):
-    return [f for f in os.listdir(dir) if re.search(r'.+\.(wav|ogg|mp3)$', f)]
+    return sorted([f for f in os.listdir(dir) if re.search(r'.+\.(wav|ogg|mp3)$', f)])
 
 @app.route('/state')
 def flask_state():

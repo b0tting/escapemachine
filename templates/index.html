@@ -23,10 +23,25 @@
               margin: 2%;
           }
 
+          .nav-tabs li {
+              background-color: lightgrey;
+              font-weight: bold;
+          }
+
       </style>
   </head>
   <body>
      <div class="container">
+
+     <ul class="nav nav-tabs">
+          <li class="active"><a data-toggle="tab" href="#home">Home</a></li>
+          <li><a data-toggle="tab" href="#log">System</a></li>
+          <li><a data-toggle="tab" href="#sounds">Hints</a></li>
+     </ul>
+
+
+<div class="tab-content">
+  <div id="home" class="tab-pane fade in active">
          <div class="row jelleblock">
          <!-- All the states known to the system, passed on page creation -->
             <div class="col-md-6 col-xs-12" id="statelist">
@@ -49,72 +64,123 @@
             </div>
         </div>
 
-        <div class="row jelleblock">
-            <div class="col-md-12">
-                <h3><span class="glyphicon glyphicon-music" aria-hidden="true"></span>&nbsp;<span id="playing" >(not playing)</span></h3>
-            </div>
-        </div>
-
-        <div class="row jelleblock">
-            <div class="col-md-12">
-                <ul id="soundlist" class="list-group">
-                   {%  for sound in sounds %}
-                    <li class="list-group-item">{{ sound }}
-                   {% endfor %}
-                </ul>
-            </div>
-        </div>
-
       <div class="row jelleblock">
-            <div class="col-md-12">
-                <ul id="loglist" class="list-group">
-                </ul>
+          <div class="row">
+            <div class="col-xs-3">
+                <button type="button" class="btn btn-lg btn-block" id="swstart"><span class="glyphicon glyphicon-play" aria-hidden="true"></span></button>
             </div>
-        </div>
+          <div class="col-xs-6">
+            <h2 class="text-center" id="swclock" >0:00</h2>
+          </div>
+            <div class="col-xs-3">
+                <button type="button" class="btn btn-lg btn-block" id="swstop"><span class="glyphicon glyphicon-stop" aria-hidden="true"></span></button>
+            </div>
+            </div>
+           <ul id="swresults" class="list-group">
 
-        <div class="row jelleblock">
-            <div class="col-md-6">
-                <button type="button" class="btn btn-lg btn-block btn-danger" id="shutdown">Shutdown!</button>
-            </div>
-            <div class="col-md-6">
-                <button type="button" class="btn btn-lg btn-block btn-danger" id="reboot">Reboot!</button>
-            </div>
+           </ul>
         </div>
-     </div>
+   </div>
+
+         <div id="log" class="tab-pane fade in">
+            <div class="row jelleblock">
+                <div class="col-md-6">
+                    <button type="button" class="btn btn-lg btn-block btn-danger" id="shutdown">Shutdown!</button>
+                </div>
+                <div class="col-md-6">
+                    <button type="button" class="btn btn-lg btn-block btn-danger" id="reboot">Reboot!</button>
+                </div>
+            </div>
+
+
+             <div class="row jelleblock">
+                <div class="col-md-12">
+                    <ul id="loglist" class="list-group">
+                    </ul>
+                </div>
+            </div>
+
+         </div>
+
+         <div id="sounds" class="tab-pane fade in">
+            <div class="row jelleblock">
+                <div class="col-md-12">
+                    <h3><span class="glyphicon glyphicon-music" aria-hidden="true"></span>&nbsp;<span id="playing" >(not playing)</span></h3>
+                </div>
+            </div>
+
+            <div class="row jelleblock">
+                <div class="col-md-12">
+                    <ul id="soundlist" class="list-group">
+                       {%  for sound in sounds %}
+                        <li class="list-group-item">{{ sound }}
+                       {% endfor %}
+                    </ul>
+                </div>
+            </div>
+         </div>
+
+    </div>
+ </div>
+
     <script src="static/js/jquery-2.1.1.min.js"></script>
     <script src="static/js/bootstrap.min.js"></script>
     <script src="static/js/bootstrap-switch.min.js"></script>
     <script language="javascript">
 
+        function timestamp() {
+            return Math.floor(Date.now() / 1000)
+        }
 
-    function get_state() {
-        $.getJSON("/state", function (data) {
-            // First, set all buttons to grey except for the active state
-            $("#statelist button").removeClass("btn-primary btn-success")
-            $("#" + data.state).addClass("btn-primary")
+        function sw_log(text) {
+            swval = $("#swclock").text()
+            $("#swresults").append("<li class='list-group-item'>" + swval + " - " + text)
+        }
 
-            // If a playing sound was received, display that to the user
-            if (data.sound) {
-                $("#playing").text(data.sound)
-            } else {
-                $("#playing").text("(none right now)")
+var last_state
+function get_state() {
+    $.getJSON("/state", function (data) {
+        // First, set all buttons to grey except for the active state
+        $("#statelist button").removeClass("btn-primary btn-success")
+        $("#" + data.state).addClass("btn-primary")
+
+        // If state has changed since last state and the stopwatch started, add to saved times
+        if(sw_interval && (data.state != last_state) ) {
+            sw_log(data.state)
+            last_state = data.state
+        }
+
+        // If a playing sound was received, display that to the user
+        if (data.sound) {
+            $("#playing").text(data.sound)
+        } else {
+            $("#playing").text("(none right now)")
+        }
+
+        // Finally, put the switches in the same condition as the server thinks they are
+        for (var pin in data.outputpins) {
+            $("#" + pin).bootstrapSwitch('state', data.outputpins[pin], true);
+        }
+
+        if(data.logs) {
+            $("#loglist").empty()
+            for(var log in data.logs) {
+                $("#loglist").append("<li class='list-group-item'>" + data.logs[log])
             }
+        }
+    })
+}
 
-            // Finally, put the switches in the same condition as the server thinks they are
-            for (var pin in data.outputpins) {
-                $("#" + pin).bootstrapSwitch('state', data.outputpins[pin], true);
-            }
+function update_sw() {
+    diff = (timestamp() - sw_starttime)
+    minutes = Math.floor(diff / 60)
+    secs = ("0" + (diff - minutes * 60)).substr(-2)
+    valstring = minutes + ":" + secs
+    $("#swclock").text(valstring)
+}
 
-            if(data.logs) {
-                $("#loglist").empty()
-                for(var log in data.logs) {
-                    $("#loglist").append("<li class='list-group-item'>" + data.logs[log])
-                }
-            }
-        })
-    }
-
-
+var sw_interval
+var sw_starttime = 0
 $( document ).ready(function() {
     // When clicking on a state button, set the state server side and mark the button green
     // It will catch up later with the getstate function
@@ -140,6 +206,22 @@ $( document ).ready(function() {
     })
     $("#reboot").click(function(){
         $.get("/reboot")
+    })
+
+    //Stopwatch functions
+    $("#swstart").click(function() {
+        if(!sw_interval){
+            $("#swresults").empty()
+            sw_starttime = timestamp()
+            sw_interval = setInterval(update_sw,1)
+        }
+    })
+    $("#swstop").click(function() {
+        if(sw_interval) {
+            clearInterval(sw_interval);
+            sw_interval = null;
+            sw_log("Stopped!")
+        }
     })
 
     // Kick off the state Ajax requests, repeat until page death
