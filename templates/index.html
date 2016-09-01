@@ -27,6 +27,11 @@
               background-color: lightgrey;
               font-weight: bold;
           }
+          
+          .alert {
+              color: red;
+              font-weight: bold;
+          }
 
       </style>
   </head>
@@ -105,8 +110,12 @@
          <div id="sounds" class="tab-pane fade in">
             <div class="row jelleblock">
                 <div class="col-md-12">
-                    <h3><span class="glyphicon glyphicon-music" aria-hidden="true"></span>&nbsp;<span id="playing" >(not playing)</span></h3>
+                    <h3><span class="glyphicon glyphicon-music" aria-hidden="true"></span>&nbsp;<span id="playing_music" >(not playing)</span></h3>
                 </div>
+                <div class="col-md-12">
+                    <h3><span class="glyphicon glyphicon-volume-up" aria-hidden="true"></span>&nbsp;<span id="playing_sound" >(not playing)</span></h3>
+                </div>
+
             </div>
 
             <div class="row jelleblock">
@@ -138,6 +147,11 @@
         }
 
 var last_state
+var max_time = {{ max_time }}
+var refresh_state = {{ refresh_state }}
+        // enable vibration support
+navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+
 function get_state() {
     $.getJSON("/state", function (data) {
         // First, set all buttons to grey except for the active state
@@ -152,9 +166,16 @@ function get_state() {
 
         // If a playing sound was received, display that to the user
         if (data.sound) {
-            $("#playing").text(data.sound)
+            $("#playing_sound").text(data.sound)
         } else {
-            $("#playing").text("(none right now)")
+            $("#playing_sound").text("(none right now)")
+        }
+
+        // If a playing music was received, display that to the user
+        if (data.music) {
+            $("#playing_music").text(data.music)
+        } else {
+            $("#playing_music").text("(none right now)")
         }
 
         // Finally, put the switches in the same condition as the server thinks they are
@@ -171,12 +192,24 @@ function get_state() {
     })
 }
 
+var overtime_buzz = false
 function update_sw() {
     diff = (timestamp() - sw_starttime)
     minutes = Math.floor(diff / 60)
     secs = ("0" + (diff - minutes * 60)).substr(-2)
     valstring = minutes + ":" + secs
-    $("#swclock").text(valstring)
+    if (minutes >= max_time) {
+        $("#swclock").html("<span class='alert'>" + valstring + "</span>")
+        if (!overtime_buzz) {
+            sw_log("Game time ended!")
+            if (navigator.vibrate) {
+                navigator.vibrate(1000);
+            }
+            overtime_buzz = true
+        }
+    } else {
+        $("#swclock").html(valstring)
+    }
 }
 
 var sw_interval
@@ -220,13 +253,14 @@ $( document ).ready(function() {
         if(sw_interval) {
             clearInterval(sw_interval);
             sw_interval = null;
+            overtime_buzz = false
             sw_log("Stopped!")
         }
     })
 
     // Kick off the state Ajax requests, repeat until page death
     get_state()
-    setInterval(get_state,2000)
+    setInterval(get_state,(refresh_state * 1000))
 })
   </script>
   </body>

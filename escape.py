@@ -11,8 +11,6 @@ import sys
 import re
 from escape_library import OutputPin, CaravanLoggingHandler
 
-## todo: Access point configuratie
-
 ## Prereqs: python 2.7 (PYTHON 3 MAG NAAR DE HEL)
 ## apt-get install git build-essential python-dev python-pip flex bison python-pygame -y
 ## pip install flask
@@ -28,7 +26,8 @@ logger.setLevel(logging.INFO)
 STATE_NORMAL = 10
 STATE_KEYTIME = 11
 STATE_AFTER_KEYTIME = 12
-readeable_states = {STATE_NORMAL:'Entree',STATE_KEYTIME:'Badkamer',STATE_AFTER_KEYTIME:'Eindspel'}
+STATE_START = 13
+readeable_states = {STATE_START:'Standby',STATE_NORMAL:'Entree',STATE_KEYTIME:'Badkamer',STATE_AFTER_KEYTIME:'Eindspel'}
 
 app = Flask(__name__)
 configfilename = "escape.conf"
@@ -62,6 +61,15 @@ def run_state_machine():
         logger.info("Correct buttons pushed for endgame state")
         state_machine_endgame()
 
+def state_machine_start():
+    global state
+    state = STATE_START
+    logger.info("Now going into state " + readeable_states[state])
+    spot.turn_off()
+    lamp.turn_off()
+    magnet.turn_off()
+    stop_music()
+
 def state_machine_reset():
     global state
     state = STATE_NORMAL
@@ -69,6 +77,7 @@ def state_machine_reset():
     spot.turn_off()
     lamp.turn_on()
     magnet.turn_on()
+    play_music(sounddir + config.get("Escape","music_state_entree"))
 
 def state_machine_bathroom():
     global state
@@ -77,7 +86,7 @@ def state_machine_bathroom():
     lamp.turn_off()
     magnet.turn_off()
     spot.turn_on()
-    play_sound(sounddir + bathroomeffect)
+    play_music(sounddir + config.get("Escape","music_state_bathroom"))
 
 def state_machine_endgame():
     global state
@@ -86,6 +95,7 @@ def state_machine_endgame():
     spot.turn_off()
     magnet.turn_off()
     lamp.turn_on()
+    play_music(sounddir + config.get("Escape","music_state_endgame"))
 
 def button_listener_thread(pin):
     logger.info(pin + " listener up for reading")
@@ -103,26 +113,68 @@ def setup_pin(pin, input=True):
         ButtonThread.start()
     return pin
 
-current_sound = ""
+sound_channel = None
+last_soundpath = ""
 def play_sound(soundpath):
     logger.info("Got request to play "+ soundpath)
-    global current_sound
-    current_sound = soundpath
+    global sound_channel, last_soundpath
     try:
-        pygame.mixer.music.load(soundpath)
-        pygame.mixer.music.play()
+        pygame.mixer.stop()
+
+        if not os.path.exists(soundpath):
+            logger.error(soundpath + " does not exist")
+
+        if soundpath[-3:] != "ogg":
+            logger.error("File requested was of type: " + soundpath[-3:] + " and might not work!")
+
+        hint = pygame.mixer.Sound(soundpath)
+        length = hint.get_length()
+        logger.info("Length of sound bit is "+ str(int(length)) + " seconds.")
+
+        if(pygame.mixer.music.get_busy()):
+            pygame.mixer.music.set_volume(0.2)
+        last_soundpath = soundpath
+        sound_channel = hint.play()
+        if(pygame.mixer.music.get_busy()):
+            time.sleep(length)
+            pygame.mixer.music.set_volume(config.getfloat("Escape", "volume") * 100)
+
     except Exception, e:
         logger.error("Tried to play sound file but got error: " + str(e))
+    logger.info("Done with " + soundpath)
 
+
+music = None
+def play_music(soundpath):
+    stop_music()
+    global music
+    pygame.mixer.music.load(soundpath)
+    music = soundpath
+    pygame.mixer.music.set_volume(config.getfloat("Escape", "volume") * 100)
+    pygame.mixer.music.play(-1)
+
+def stop_music():
+    fade = config.getint("Escape","fadeout")
+    if(pygame.mixer.music.get_busy()):
+        pygame.mixer.music.fadeout(fade * 1000)
+        time.sleep(fade)
+    global music
+    music = None
 
 def get_sounds_from_folder(dir):
     return sorted([f for f in os.listdir(dir) if re.search(r'.+\.(wav|ogg|mp3)$', f)])
 
 @app.route('/state')
 def flask_state():
-    playing = current_sound if pygame.mixer.music.get_busy() else False
+    playing_sound = last_soundpath if (sound_channel and sound_channel.get_busy()) else False
+    playing_music = music if pygame.mixer.music.get_busy() else False
     outputpinstates = {pinname: pin.is_on for (pinname, pin) in outputpins.iteritems()}
-    return jsonify(state=readeable_states[state],sound=playing,outputpins=outputpinstates,logs=entriesHandler.get_last_entries())
+    return jsonify(state=readeable_states[state],
+                   sound=playing_sound,
+                   music=playing_music,
+                   outputpins=outputpinstates,
+                   logs=entriesHandler.get_last_entries(),
+                   )
 
 @app.route('/play/<filename>')
 def flask_play(filename):
@@ -132,7 +184,9 @@ def flask_play(filename):
 @app.route('/state/<newstate>')
 def flask_set_state(newstate):
     logger.info("Got web request for state " + newstate)
-    if newstate == readeable_states[STATE_NORMAL]:
+    if newstate == readeable_states[STATE_START]:
+        state_machine_start()
+    elif newstate == readeable_states[STATE_NORMAL]:
         state_machine_reset()
     elif newstate == readeable_states[STATE_KEYTIME]:
         state_machine_bathroom()
@@ -157,7 +211,7 @@ def flask_reboot():
 def flask_set_switch(pinname, newstate):
     pin = outputpins[pinname]
     to_on = newstate.lower() == "true"
-    logger.info("Got web request to turn pin " + pin + ("ON" if to_on else "OFF"))
+    logger.info("Got web request to turn pin " + pin.name + (" ON" if to_on else " OFF"))
     try:
         if to_on:
             pin.turn_on()
@@ -173,7 +227,12 @@ def flask_get_lastlog():
 
 @app.route('/')
 def hello_world():
-    return render_template("index.html", sounds=get_sounds_from_folder(sounddir), states=readeable_states,outputpins = outputpins)
+    return render_template("index.html",
+                           sounds=get_sounds_from_folder(sounddir),
+                           states=readeable_states,
+                           outputpins = outputpins,
+                           max_time=config.get("Escape", "max_time"),
+                           refresh_state=config.getint("Escape", "refresh_browser_time"))
 
 ## Set up mixer now while time is still cheap
 if not pygame.mixer.get_init():
@@ -198,18 +257,12 @@ spot = OutputPin(config.get("Escape", "spotpin"), "Spot")
 time.sleep(0.5)
 magnet = OutputPin(config.get("Escape", "magnetpin"), "Magnet")
 outputpins = {lamp.name:lamp, spot.name:spot,magnet.name:magnet}
-
-## The bathroomeffect is played in the bathroom machine scene
 sounddir = config.get("Escape", "sounddir") + "/"
-bathroomeffect = config.get("Escape", "bathroomeffect")
-if not os.path.exists(sounddir + bathroomeffect):
-    print("Could not find sound effect " + sounddir + bathroomeffect)
-    sys.exit()
 
 ## Default setting is state_normal. By running reset we set all the switches in the correct
 ## order.
-state_machine_reset()
-state = STATE_NORMAL
+state_machine_start()
+state = STATE_START
 
 logger.error("Starting app complete")
 app.run(debug=False,host="0.0.0.0",port=80,threaded=True)
