@@ -1,0 +1,36 @@
+[Escape]
+## Directory that holds all of the sounds and ambient music
+sounddir = ./static/sounds
+
+## Default volume 1-100
+volume = 85
+
+## Fade out time
+fadeout = 3
+
+## Game max time - number of minutes before the game is expected to end.
+max_time = 30
+
+## Refresh speed for updates in seconds, slow down if you are choking the CHIP with browsers
+refresh_browser_time = 2
+
+## Logfile location
+logfile = ./escape.log
+
+## Use Flask debugging. Has some side effects due to the use of threading, but good for website debugging
+debug = False
+
+## Define which pin links to which item or button. Find these at
+bookbutton1pin = XIO-P2
+bookbutton2pin = XIO-P4
+keybuttonpin = XIO-P6
+lamppin = CSID1
+spotpin = CSID3
+magnetpin = CSID5
+
+## Music backgrounds for the different stages
+music_state_entree = ambience_1.mp3
+music_state_bathroom = ambience_2.mp3
+music_state_endgame = ambience_3.mp3
+
+
