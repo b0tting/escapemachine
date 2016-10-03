@@ -8,134 +8,159 @@
     <title>Caravan Escape</title>
 
     <!-- Bootstrap -->
-    <link href="static/css/bootstrap.min.css" rel="stylesheet">
-    <link href="static/css/bootstrap-switch.min.css" rel="stylesheet">
-      <style>
-          body {
-              background-color: black;
-              margin: 2%
-          }
-
-          .jelleblock {
-              background-color: lightgrey;
-              padding: 2%;
-              border-radius: 10px;
-              margin: 2%;
-          }
-
-          .nav-tabs li {
-              background-color: lightgrey;
-              font-weight: bold;
-          }
-          
-          .alert {
-              color: red;
-              font-weight: bold;
-          }
-
-      </style>
+    <link href="static/css/material-icons.css" rel="stylesheet">
+    <link type="text/css" rel="stylesheet" href="static/css/materialize.min.css"/>
+    <link type="text/css" rel="stylesheet" href="static/css/nouislider.css"/>
   </head>
   <body>
-     <div class="container">
 
-     <ul class="nav nav-tabs">
-          <li class="active"><a data-toggle="tab" href="#home">Home</a></li>
-          <li><a data-toggle="tab" href="#log">System</a></li>
-          <li><a data-toggle="tab" href="#sounds">Hints</a></li>
-     </ul>
+   <nav>
+    <div class="nav-wrapper">
+        <a href="#!" class="brand-logo center" id="swclock">0:00</a>
+      <ul id="nav-mobile" class="right hide-on-med-and-down">
+      </ul>
+    </div>
+  </nav>
 
+  <div class="fixed-action-btn" style="bottom: 45px; right: 24px;">
+    <a class="btn-floating btn-large red" id="swstart">
+      <i class="large material-icons" >play_arrow</i>
+    </a>
+  </div>
 
-<div class="tab-content">
-  <div id="home" class="tab-pane fade in active">
-         <div class="row jelleblock">
-         <!-- All the states known to the system, passed on page creation -->
-            <div class="col-md-6 col-xs-12" id="statelist">
+  <div class="row">
+    <div class="col s12">
+      <ul class="tabs">
+        <li class="tab col s3"><a href="#home">Scenes</a></li>
+        <li class="tab col s3"><a href="#sounds">Hints</a></li>
+        <li class="tab col s3"><a href="#log">System</a></li>
+      </ul>
+    </div>
+
+          <div id="home" class="col s12">
+             <div class="row">
+             <!-- All the states known to the system, passed on page creation -->
                 {%  for state in states.values() %}
-                    <button type="button" class="btn btn-lg btn-block" id="{{ state }}">{{ state }}</button><br>
-                {%  endfor %}
-            </div>
-            <div class="col-md-6 col-xs-12">
-            <!-- All the output pins known to the system, passed on page creation -->
-            {%  for pin in outputpins.values() %}
-                <div class="row">
-                    <div class="col-md-6 col-xs-4">
-                        <h4 class="pull-right">{{ pin.name }}</h4>
-                    </div>
-                    <div class="col-md-6 col-xs-6">
-                        <input type="checkbox" name="switchbutton" data-size="large" id="{{ pin.name }}" {% if pin.is_on %}checked{% endif %}>
+
+                <div class="col s12 m6 l3" id="statelist">
+                    <div class="card lighten-5" id="{{ state }}" onClick="forceState(this, '{{ state }}')">
+                        <div class="card-content deep-orange-text darken-4">
+                            <span class="card-title">{{ state }}</span>
+                        </div>
                     </div>
                 </div>
-                {% endfor  %}
+                 {% endfor  %}
             </div>
-        </div>
-
-      <div class="row jelleblock">
-          <div class="row">
-            <div class="col-xs-3">
-                <button type="button" class="btn btn-lg btn-block" id="swstart"><span class="glyphicon glyphicon-play" aria-hidden="true"></span></button>
-            </div>
-          <div class="col-xs-6">
-            <h2 class="text-center" id="swclock" >0:00</h2>
-          </div>
-            <div class="col-xs-3">
-                <button type="button" class="btn btn-lg btn-block" id="swstop"><span class="glyphicon glyphicon-stop" aria-hidden="true"></span></button>
-            </div>
-            </div>
-           <ul id="swresults" class="list-group">
-
-           </ul>
-        </div>
-   </div>
-
-         <div id="log" class="tab-pane fade in">
-            <div class="row jelleblock">
-                <div class="col-md-6">
-                    <button type="button" class="btn btn-lg btn-block btn-danger" id="shutdown">Shutdown!</button>
-                </div>
-                <div class="col-md-6">
-                    <button type="button" class="btn btn-lg btn-block btn-danger" id="reboot">Reboot!</button>
-                </div>
-            </div>
-
-
-             <div class="row jelleblock">
-                <div class="col-md-12">
-                    <ul id="loglist" class="list-group">
-                    </ul>
-                </div>
-            </div>
-
-         </div>
-
-         <div id="sounds" class="tab-pane fade in">
-            <div class="row jelleblock">
-                <div class="col-md-12">
-                    <h3><span class="glyphicon glyphicon-music" aria-hidden="true"></span>&nbsp;<span id="playing_music" >(not playing)</span></h3>
-                </div>
-                <div class="col-md-12">
-                    <h3><span class="glyphicon glyphicon-volume-up" aria-hidden="true"></span>&nbsp;<span id="playing_sound" >(not playing)</span></h3>
-                </div>
+            <div class="row">
+                <!-- All the output pins known to the system, passed on page creation -->
+                {%  for pin in outputpins.values() %}
+                    <div class="col s6 m3 l1">
+                        {{ pin.name }}
+                        <div class="switch">
+                            <label>Uit
+                              <input type="checkbox" name="switchbutton" id="{{ pin.name }}" {% if pin.is_on %}checked{% endif %}>
+                              <span class="lever"></span>
+                            Aan
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor  %}
 
             </div>
 
-            <div class="row jelleblock">
-                <div class="col-md-12">
-                    <ul id="soundlist" class="list-group">
+              <div class="row">
+                   <ul id="swresults" class="collection">
+                   </ul>
+              </div>
+           </div>
+
+           <div id="sounds" class="col s12">
+            <div class="row">
+                <div class="col s12">
+                    <div id="soundlist" class="collection">
                        {%  for sound in sounds %}
-                        <li class="list-group-item">{{ sound }}
+                            <a href="#" soundfile="{{ sound }}" class="collection-item left-align"><i class="small material-icons left">play_arrow</i>{{ sound }}</a>
                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+         </div>
+
+         <div id="log" class="col s12">
+          <h4>Volume</h4>
+         <div class="divider"></div>
+            <div class="section">
+                <div class="row">
+                    <div class="col s12">
+                        <label>Now playing..</label>
+                        <p><span id="playing_music" >(not playing)</span></p>
+                    </div>
+                </div>
+                <div class="row">
+                        <div class="col s1"><i class="material-icons">volume_up</i></div>
+                        <div class="col s11"><div id="musicvol"></div></div>
+                </div>
+                <div class="divider"></div>
+                <div class="row">
+                    <div class="col s12">
+                        <label>Now playing..</label>
+                        <p><span id="playing_sound" >(not playing)</span></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col s1"><i class="material-icons">settings_voice</i></div>
+                    <div class="col s11"><div id="soundvol"></div></div>
+                </div>
+
+
+          <h4>System</h4>
+         <div class="divider"></div>
+        <div class="section">
+          <div class="row">
+            <div class="col s12">
+                <a class="waves-effect waves-light btn modal-trigger" href="#stop">Halt system</a>
+            </div>
+          </div>
+        </div>
+
+             <div class="row">
+                <div class="col-md-12">
+                    <ul id="loglist" class="collection">
                     </ul>
                 </div>
             </div>
          </div>
+  <!-- einde tabs -->
+
+
+  <!-- Modal Structure -->
+  <div id="stop" class="modal">
+    <div class="modal-content">
+      <h5>Halt system</h5>
+             <div class="row">
+                <div class="col-md-12">
+                    <button type="button" class="btn btn-lg btn-block btn-danger" id="shutdown"><i class="material-icons left">power_settings_new</i>Shutdown!</button>
+                </div>
+            </div>
+             <div class="row">
+                <div class="col-md-12">
+                    <button type="button" class="btn btn-lg btn-block btn-danger" id="reboot"><i class="material-icons left">replay</i>Reboot!</button><br>
+                </div>
+            </div>
 
     </div>
- </div>
+    <div class="modal-footer">
+        <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat">Cancel</a>
+    </div>
+  </div>
 
-    <script src="static/js/jquery-2.1.1.min.js"></script>
-    <script src="static/js/bootstrap.min.js"></script>
-    <script src="static/js/bootstrap-switch.min.js"></script>
-    <script language="javascript">
+</div>
+
+
+   <script src="static/js/jquery-2.1.1.min.js"></script>
+   <script type="text/javascript" src="static/js/materialize.min.js"></script>
+   <script type="text/javascript" src="static/js/nouislider.min.js"></script>
+   <script language="javascript">
 
         function timestamp() {
             return Math.floor(Date.now() / 1000)
@@ -143,20 +168,20 @@
 
         function sw_log(text) {
             swval = $("#swclock").text()
-            $("#swresults").append("<li class='list-group-item'>" + swval + " - " + text)
+            $("#swresults").append('<li class="collection-item"><span class="title">'+swval+ '</span> ' + text)
         }
 
-var last_state
-var max_time = {{ max_time }}
-var refresh_state = {{ refresh_state }}
+var last_state = false;
+var max_time = {{ max_time }};
+var refresh_state = {{ refresh_state }};
         // enable vibration support
 navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
 
 function get_state() {
     $.getJSON("/state", function (data) {
         // First, set all buttons to grey except for the active state
-        $("#statelist button").removeClass("btn-primary btn-success")
-        $("#" + data.state).addClass("btn-primary")
+        $("#statelist div").toggleClass("deep-orange lighten-5 lighten-3", false)
+        $("#" + data.state).toggleClass("deep-orange lighten-5", true)
 
         // If state has changed since last state and the stopwatch started, add to saved times
         if(sw_interval && (data.state != last_state) ) {
@@ -180,26 +205,32 @@ function get_state() {
 
         // Finally, put the switches in the same condition as the server thinks they are
         for (var pin in data.outputpins) {
-            $("#" + pin).bootstrapSwitch('state', data.outputpins[pin], true);
+            $("#" + pin).prop('checked', data.outputpins[pin], true);
         }
 
         if(data.logs) {
-            $("#loglist").empty()
+            $("#loglist").empty();
             for(var log in data.logs) {
-                $("#loglist").append("<li class='list-group-item'>" + data.logs[log])
+                $("#loglist").append("<li class='collection-item'>" + data.logs[log])
             }
         }
     })
 }
 
+// Functie die iedere seconde het klokje van de stopwatch bijwerkt. Nog best lastig!
 var overtime_buzz = false
 function update_sw() {
+    // Reken eerst minuten en secondes uit sinds start klok. Secondes als string, met voorloop nul
     diff = (timestamp() - sw_starttime)
     minutes = Math.floor(diff / 60)
     secs = ("0" + (diff - minutes * 60)).substr(-2)
     valstring = minutes + ":" + secs
+
+    // Max_time is server side gezet bij aanmaken pagina
     if (minutes >= max_time) {
         $("#swclock").html("<span class='alert'>" + valstring + "</span>")
+
+        // Als de telefoon buzz ondersteunt, buzz dan één keer.
         if (!overtime_buzz) {
             sw_log("Game time ended!")
             if (navigator.vibrate) {
@@ -212,25 +243,26 @@ function update_sw() {
     }
 }
 
+function forceState(caller, state) {
+    $(caller).toggleClass("deep-orange lighten-3", true)
+    $.get("/state/" + state)
+}
+
 var sw_interval
 var sw_starttime = 0
 $( document ).ready(function() {
+    $('ul.tabs').tabs();
     // When clicking on a state button, set the state server side and mark the button green
     // It will catch up later with the getstate function
-    $("#statelist button").click(function(){
-        $(this).addClass("btn-success")
-        $.get("/state/" + $(this).attr("id"))
-    })
 
     // If someone clicks the switch, call the server to follow
-    $("input[name='switchbutton']").on('switchChange.bootstrapSwitch', function(e){
-            $.get("/switch/" + $(this).attr("id") + "/" + $(this).is(':checked'))
-        }
-    )
+    $("input[name='switchbutton']").on('click', function(e){
+            $.get("/switch/" + $(this).attr("id") + "/" + ($(this).is(':checked') ? "1" : "0"))
+    })
 
     // Send a request to play said MP3 server side
-    $("#soundlist li").click(function(){
-        $.get("/play/" + $(this).text())
+    $("#soundlist a").click(function(){
+        $.get("/play/" + $(this).attr("soundfile"))
     })
 
     // Send a request to shutdown c.h.i.p.
@@ -241,16 +273,45 @@ $( document ).ready(function() {
         $.get("/reboot")
     })
 
+    $('.modal-trigger').leanModal();
+
+    // Start sliders for music and sound volumes
+    musicvol = document.getElementById("musicvol")
+    noUiSlider.create(musicvol, {
+       start: {{ music_volume }},
+       step: 10,
+       range: {
+         'min': 0,
+         'max': 100
+       }
+      })
+    musicvol.noUiSlider.on('change', function() {
+         $.get("/setvolume/music_volume/" + musicvol.noUiSlider.get())
+    })
+
+    // Start sliders for music and sound volumes
+    soundvol = document.getElementById("soundvol")
+     noUiSlider.create(soundvol, {
+         start: {{ sound_volume }},
+         step: 10,
+         range: {
+         'min': 0,
+         'max': 100
+        }
+      });
+    soundvol.noUiSlider.on('change', function() {
+         $.get("/setvolume/sound_volume/" + soundvol.noUiSlider.get())
+    })
+
+
+
     //Stopwatch functions
     $("#swstart").click(function() {
         if(!sw_interval){
             $("#swresults").empty()
             sw_starttime = timestamp()
             sw_interval = setInterval(update_sw,1)
-        }
-    })
-    $("#swstop").click(function() {
-        if(sw_interval) {
+        } else {
             clearInterval(sw_interval);
             sw_interval = null;
             overtime_buzz = false
@@ -259,7 +320,7 @@ $( document ).ready(function() {
     })
 
     // Kick off the state Ajax requests, repeat until page death
-    get_state()
+    get_state();
     setInterval(get_state,(refresh_state * 1000))
 })
   </script>

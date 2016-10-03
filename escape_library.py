@@ -1,6 +1,11 @@
 from collections import OrderedDict
 import logging
-import CHIP_IO.GPIO as GPIO
+import imp
+try:
+    imp.find_module('CHIP_IO')
+    import CHIP_IO.GPIO as GPIO
+except ImportError:
+    GPIO = False
 import datetime
 import time
 
@@ -31,13 +36,15 @@ class OutputPin:
     def __init__(self, pin, name):
         self.name = name
         self.pin = pin
-        GPIO.setup(pin, GPIO.OUT)
-        GPIO.output(pin, GPIO.HIGH)
+        if GPIO:
+            GPIO.setup(pin, GPIO.OUT)
+            GPIO.output(pin, GPIO.LOW)
         self.is_on = False
 
     def flip_switch(self, to_high):
-        state = GPIO.LOW if to_high else GPIO.HIGH
-        GPIO.output(self.pin, state)
+        if GPIO:
+            state = GPIO.HIGH if to_high else GPIO.LOW
+            GPIO.output(self.pin, state)
         self.is_on = not to_high
 
     def turn_on(self):

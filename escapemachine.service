@@ -1,0 +1,10 @@
+[Unit]
+Description=Escape machine python app
+
+[Service]
+PIDFile=/var/run/escapemachine.pid
+WorkingDirectory=/usr/local/escapemachine
+ExecStart=/bin/bash escape.sh
+
+[Install]
+WantedBy=multi-user.target

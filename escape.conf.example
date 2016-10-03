@@ -6,10 +6,10 @@ sounddir = ./static/sounds
 volume = 85
 
 ## Fade out time
-fadeout = 3
+fadeout = 1
 
 ## Game max time - number of minutes before the game is expected to end.
-max_time = 30
+max_time = 15
 
 ## Refresh speed for updates in seconds, slow down if you are choking the CHIP with browsers
 refresh_browser_time = 2
@@ -33,4 +33,14 @@ music_state_entree = ambience_1.mp3
 music_state_bathroom = ambience_2.mp3
 music_state_endgame = ambience_3.mp3
 
+## Sound effects at start of the different stages
+## Are optional, ie. I check if a sound_effect_<scene_name> exists
+sound_effect_bathroom = ding_effect.ogg
+
+## Webserver port
+port = 8000
+
+## Default volumes. "Sound volume" is for hints. Values go from 0 to 100.
+music_volume = 100
+sound_volume = 100
 
