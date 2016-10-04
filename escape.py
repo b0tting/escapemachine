@@ -321,8 +321,10 @@ state_machine_start()
 state = STATE_START
 
 logger.error("Starting app complete")
-##app.run(debug=False,host="0.0.0.0",port=setup_pin(config.get("Escape", "port")),threaded=True)
-app.run(debug=True,host="0.0.0.0",port=8000,threaded=True)
+
+
+app.run(debug=config.getboolean("Escape", "debug"),host="0.0.0.0",port=config.getint("Escape", "port"),threaded=True)
+
 
 
 
