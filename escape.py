@@ -11,9 +11,12 @@ import sys
 import re
 from escape_library import OutputPin, CaravanLoggingHandler
 import imp
+
+chip_complete_mode = False
 try:
     imp.find_module('CHIP_IO')
     import CHIP_IO.GPIO as GPIO
+    chip_complete_mode = True
 except ImportError:
     GPIO = False
 
@@ -199,7 +202,7 @@ def flask_state():
                    sound=playing_sound,
                    music=playing_music,
                    outputpins=outputpinstates,
-                   logs=entriesHandler.get_last_entries(),
+                   logs=entriesHandler.get_last_entries()
                    )
 
 @app.route('/play/<filename>')
@@ -319,6 +322,17 @@ pygame.mixer.music.set_volume(music_volume / 100)
 ## order.
 state_machine_start()
 state = STATE_START
+
+if chip_complete_mode:
+    logger.error("CHIP_IO found, running on CHIP mode")
+else:
+    logger.error("CHIP_IO NOT found. Running in fake mode")
+
+debug = config.getboolean("Escape", "debug")
+if debug:
+    logger.error("Running in debug mode, app will restart.")
+    if chip_complete_mode:
+        logger.error("This might cause weird behaviour on the CHIP, so please don't do that")
 
 logger.error("Starting app complete")
 

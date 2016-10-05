@@ -16,6 +16,7 @@
 
    <nav>
     <div class="nav-wrapper">
+        <img src="static/images/logo.png" height="100%">
         <a href="#!" class="brand-logo center" id="swclock">0:00</a>
       <ul id="nav-mobile" class="right hide-on-med-and-down">
       </ul>
@@ -161,7 +162,6 @@
    <script type="text/javascript" src="static/js/materialize.min.js"></script>
    <script type="text/javascript" src="static/js/nouislider.min.js"></script>
    <script language="javascript">
-
         function timestamp() {
             return Math.floor(Date.now() / 1000)
         }
@@ -171,51 +171,55 @@
             $("#swresults").append('<li class="collection-item"><span class="title">'+swval+ '</span> ' + text)
         }
 
-var last_state = false;
-var max_time = {{ max_time }};
-var refresh_state = {{ refresh_state }};
+        var last_state = false;
+        var max_time = {{ max_time }};
+        var refresh_state = {{ refresh_state }};
+
         // enable vibration support
-navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+        navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
 
-function get_state() {
-    $.getJSON("/state", function (data) {
-        // First, set all buttons to grey except for the active state
-        $("#statelist div").toggleClass("deep-orange lighten-5 lighten-3", false)
-        $("#" + data.state).toggleClass("deep-orange lighten-5", true)
+    function get_state() {
+        $.getJSON("/state", function (data) {
+            // First, set all buttons to grey except for the active state
+            $("#statelist div").toggleClass("deep-orange lighten-5 lighten-3", false)
+            $("#" + data.state).toggleClass("deep-orange lighten-5", true)
 
-        // If state has changed since last state and the stopwatch started, add to saved times
-        if(sw_interval && (data.state != last_state) ) {
-            sw_log(data.state)
-            last_state = data.state
-        }
-
-        // If a playing sound was received, display that to the user
-        if (data.sound) {
-            $("#playing_sound").text(data.sound)
-        } else {
-            $("#playing_sound").text("(none right now)")
-        }
-
-        // If a playing music was received, display that to the user
-        if (data.music) {
-            $("#playing_music").text(data.music)
-        } else {
-            $("#playing_music").text("(none right now)")
-        }
-
-        // Finally, put the switches in the same condition as the server thinks they are
-        for (var pin in data.outputpins) {
-            $("#" + pin).prop('checked', data.outputpins[pin], true);
-        }
-
-        if(data.logs) {
-            $("#loglist").empty();
-            for(var log in data.logs) {
-                $("#loglist").append("<li class='collection-item'>" + data.logs[log])
+            // If state has changed since last state and the stopwatch started, add to saved times
+            if(sw_interval && (data.state != last_state) ) {
+                sw_log(data.state)
+                toast("Now starting scene " + data.state)
+                last_state = data.state
             }
-        }
-    })
-}
+
+            // If a playing sound was received, display that to the user
+            if (data.sound) {
+                $("#playing_sound").text(data.sound)
+            } else {
+                $("#playing_sound").text("(none right now)")
+            }
+
+            // If a playing music was received, display that to the user
+            if (data.music) {
+                $("#playing_music").text(data.music)
+            } else {
+                $("#playing_music").text("(none right now)")
+            }
+
+            // Finally, put the switches in the same condition as the server thinks they are
+            for (var pin in data.outputpins) {
+                $("#" + pin).prop('checked', data.outputpins[pin], true);
+            }
+
+            if(data.logs) {
+                $("#loglist").empty();
+                for(var log in data.logs) {
+                    $("#loglist").append("<li class='collection-item'>" + data.logs[log])
+                }
+            }
+        }).fail(function(){
+            toast("Could not connect to server", true)
+        })
+    }
 
 // Functie die iedere seconde het klokje van de stopwatch bijwerkt. Nog best lastig!
 var overtime_buzz = false
@@ -228,11 +232,13 @@ function update_sw() {
 
     // Max_time is server side gezet bij aanmaken pagina
     if (minutes >= max_time) {
-        $("#swclock").html("<span class='alert'>" + valstring + "</span>")
 
-        // Als de telefoon buzz ondersteunt, buzz dan één keer.
+        $("#swclock").html(valstring + "!")
         if (!overtime_buzz) {
-            sw_log("Game time ended!")
+            toast("Overtime! " + max_time + " minutes have passed!")
+            sw_log("Overtime! " + max_time + " minutes have passed!")
+
+            // Als de telefoon buzz ondersteunt, buzz dan één keer.
             if (navigator.vibrate) {
                 navigator.vibrate(1000);
             }
@@ -246,6 +252,18 @@ function update_sw() {
 function forceState(caller, state) {
     $(caller).toggleClass("deep-orange lighten-3", true)
     $.get("/state/" + state)
+}
+
+defaulttoasttime = 4000
+fullrefresh = refresh_state * 1000
+function toast(message, shorten) {
+    // If full time, or if the current refresh is longer then the default toast time
+    // I need to make sure that in the other case (shorten AND short refresh rates) toasts don't start piling up
+    if(!shorten || fullrefresh > defaulttoasttime) {
+        Materialize.toast(message, defaulttoasttime)
+    } else {
+        Materialize.toast(message, fullrefresh)
+    }
 }
 
 var sw_interval

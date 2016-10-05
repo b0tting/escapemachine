@@ -2,9 +2,6 @@
 ## Directory that holds all of the sounds and ambient music
 sounddir = ./static/sounds
 
-## Default volume 1-100
-volume = 85
-
 ## Fade out time
 fadeout = 1
 
@@ -39,9 +36,8 @@ sound_effect_bathroom = ding_effect.ogg
 
 ## Webserver port
 port = 8000
-debug = False
 
 ## Default volumes. "Sound volume" is for hints. Values go from 0 to 100.
-music_volume = 100
-sound_volume = 100
+music_volume = 85
+sound_volume = 85
 
