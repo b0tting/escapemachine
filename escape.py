@@ -158,7 +158,7 @@ def play_sound(soundpath):
         sound_channel = hint.play()
         if pygame.mixer.music.get_busy():
             time.sleep(length +1)
-            pygame.mixer.music.set_volume(config.getfloat("Escape", "volume") * 100)
+            pygame.mixer.music.set_volume(float(music_volume) / 100)
 
     except Exception, e:
         logger.error("Tried to play sound file but got error: " + str(e))
@@ -174,7 +174,7 @@ def play_music(soundpath):
     global music
     pygame.mixer.music.load(soundpath)
     music = soundpath
-    pygame.mixer.music.set_volume(music_volume)
+    pygame.mixer.music.set_volume(float(music_volume) / 100)
     pygame.mixer.music.play(-1)
 
 def stop_music():
