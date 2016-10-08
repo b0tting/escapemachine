@@ -2,9 +2,8 @@ from collections import OrderedDict
 import logging
 import imp
 try:
-    imp.find_module('CHIP_IO')
     import CHIP_IO.GPIO as GPIO
-except ImportError:
+except Exception:
     GPIO = False
 import datetime
 import time

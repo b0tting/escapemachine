@@ -10,14 +10,12 @@ import atexit
 import sys
 import re
 from escape_library import OutputPin, CaravanLoggingHandler
-import imp
 
 chip_complete_mode = False
 try:
-    imp.find_module('CHIP_IO')
     import CHIP_IO.GPIO as GPIO
     chip_complete_mode = True
-except ImportError:
+except Exception:
     GPIO = False
 
 ## Prereqs: python 2.7 (PYTHON 3 MAG NAAR DE HEL)
