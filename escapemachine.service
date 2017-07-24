@@ -1,5 +1,7 @@
 [Unit]
 Description=Escape machine python app
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 PIDFile=/var/run/escapemachine.pid
