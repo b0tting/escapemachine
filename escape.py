@@ -2,7 +2,6 @@ import ConfigParser
 import logging
 import os
 import pygame
-from threading import Thread
 
 from flask import Flask, render_template, jsonify
 import time
@@ -13,10 +12,12 @@ from escape_library import OutputPin, CaravanLoggingHandler
 
 chip_complete_mode = False
 try:
-    import CHIP_IO.GPIO as GPIO
+    import RPi.GPIO as GPIO
+    GPIO.setmode(GPIO.BCM)
     chip_complete_mode = True
 except Exception:
     GPIO = False
+
 
 ## Prereqs: python 2.7 (PYTHON 3 MAG NAAR DE HEL)
 ## apt-get install git build-essential python-dev python-pip flex bison python-pygame -y
@@ -51,15 +52,15 @@ def clean():
 ## Given time, the state machine should be migrated to it's own class and use
 ## external XML or sorts to define states. Seeing the clear purpose of the current
 ## version I'm not investing time in that yet.
-def run_state_machine():
+def run_state_machine(self):
     ## Measuring buttons states before investigating current state
-    book1pushed = not GPIO.input(bookbutton1pin)
-    book2pushed = not GPIO.input(bookbutton2pin)
-    keypushed = not GPIO.input(keybuttonpin)
-    logger.info("Buttons push, now in: pin1 " + str(book1pushed) + ", pin2 " + str(book2pushed) + ", pin3 " + str(keypushed))
+    time.sleep(0.3)
+    bookspushed = GPIO.input(bookbuttonspin)
+    keypushed = GPIO.input(keybuttonpin)
+    logger.info("Buttons push, now in: books " + str(bookspushed) + ", key " + str(keypushed))
 
     ## Nobody said it had to be hard!
-    if not book1pushed and not book2pushed and state == STATE_NORMAL:
+    if not bookspushed and state == STATE_NORMAL:
         logger.info("Correct buttons pushed for bathroom state")
         state_machine_bathroom()
     elif not keypushed and state == STATE_KEYTIME:
@@ -68,7 +69,7 @@ def run_state_machine():
 
 def state_machine_start():
     global state
-    state = STATE_START
+    state = STATE_START ## standby
     logger.info("Now going into state " + readeable_states[state])
     spot.turn_off()
     lamp.turn_off()
@@ -106,20 +107,24 @@ def state_machine_endgame():
     play_scene_sound("sound_effect_endgame")
 
 def button_listener_thread(pin):
-    logger.info(pin + " listener up for reading")
+    logger.info(str(pin) + " listener up for reading")
     while True:
+        logger.info(str(pin))
         GPIO.wait_for_edge(pin, GPIO.BOTH)
-        logger.info(pin + " got edge!")
+        logger.info(str(pin) + " got edge!")
         run_state_machine()
         time.sleep(1)
 
 def setup_pin(pin, input=True):
     if input and GPIO:
         GPIO.setup(pin, GPIO.IN)
-        button_thread = Thread(target = button_listener_thread, args = (pin,))
-        button_thread.daemon = True
-        button_thread.start()
+        
+        ## button_thread = Thread(target = button_listener_thread, args = (pin,))
+        ## button_thread.daemon = True
+        ## button_thread.start()
     return pin
+
+   
 
 def play_scene_sound(scene_sound):
     if config.has_option('Escape', scene_sound):
@@ -302,14 +307,19 @@ logger.setLevel(logging.INFO)
 
 ## Init all pins
 logger.info("Initalizing pins")
-bookbutton1pin = setup_pin(config.get("Escape", "bookbutton1pin"))
-bookbutton2pin = setup_pin(config.get("Escape", "bookbutton2pin"))
-keybuttonpin = setup_pin(config.get("Escape", "keybuttonpin"))
-lamp = OutputPin(config.get("Escape", "lamppin"), "Lamp")
+bookbuttonspin = config.getint("Escape", "bookbuttonspin")
+GPIO.setup(bookbuttonspin, GPIO.IN)
+GPIO.add_event_detect(bookbuttonspin, GPIO.BOTH, callback=run_state_machine, bouncetime=200)
+
+keybuttonpin = config.getint("Escape", "keybuttonpin")
+GPIO.setup(keybuttonpin, GPIO.IN)
+GPIO.add_event_detect(keybuttonpin, GPIO.BOTH, callback=run_state_machine, bouncetime=200)
+
+lamp = OutputPin(config.getint("Escape", "lamppin"), "Lamp")
 time.sleep(0.5)
-spot = OutputPin(config.get("Escape", "spotpin"), "Spot")
+spot = OutputPin(config.getint("Escape", "spotpin"), "Spot")
 time.sleep(0.5)
-magnet = OutputPin(config.get("Escape", "magnetpin"), "Magnet")
+magnet = OutputPin(config.getint("Escape", "magnetpin"), "Magnet")
 outputpins = {lamp.name:lamp, spot.name:spot,magnet.name:magnet}
 sounddir = config.get("Escape", "sounddir") + "/"
 music_volume = config.getfloat("Escape", "music_volume")
@@ -335,9 +345,4 @@ if debug:
 logger.error("Starting app complete")
 
 
-app.run(debug=config.getboolean("Escape", "debug"),host="0.0.0.0",port=config.getint("Escape", "port"),threaded=True)
-
-
-
-
-
+app.run(debug=config.getboolean("Escape", "debug"),host="1.1.1.1",port=config.getint("Escape", "port"),threaded=True)
