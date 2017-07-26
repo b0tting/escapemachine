@@ -345,4 +345,4 @@ if debug:
 logger.error("Starting app complete")
 
 
-app.run(debug=config.getboolean("Escape", "debug"),host="1.1.1.1",port=config.getint("Escape", "port"),threaded=True)
+app.run(debug=config.getboolean("Escape", "debug"),host="0.0.0.0",port=config.getint("Escape", "port"),threaded=True)
