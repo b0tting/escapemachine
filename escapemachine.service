@@ -5,8 +5,8 @@ After=network-online.target
 
 [Service]
 PIDFile=/var/run/escapemachine.pid
-WorkingDirectory=/usr/local/escapemachine
-ExecStart=/bin/bash escape.sh
+WorkingDirectory=/home/pi/escapemachine
+ExecStart=/usr/bin/python escape.py
 
 [Install]
 WantedBy=multi-user.target
