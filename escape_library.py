@@ -2,7 +2,8 @@ from collections import OrderedDict
 import logging
 import imp
 try:
-    import CHIP_IO.GPIO as GPIO
+    import RPi.GPIO as GPIO
+    GPIO.setmode(GPIO.BCM)
 except Exception:
     GPIO = False
 import datetime
