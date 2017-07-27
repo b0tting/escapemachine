@@ -312,6 +312,7 @@ GPIO.setup(bookbuttonpin1, GPIO.IN)
 GPIO.add_event_detect(bookbuttonpin1, GPIO.BOTH, callback=run_state_machine, bouncetime=200)
 
 bookbuttonpin2 = config.getint("Escape", "bookbuttonpin2")
+GPIO.setup(bookbuttonpin2, GPIO.IN)
 
 keybuttonpin = config.getint("Escape", "keybuttonpin")
 GPIO.setup(keybuttonpin, GPIO.IN)
