@@ -55,12 +55,13 @@ def clean():
 def run_state_machine(self):
     ## Measuring buttons states before investigating current state
     time.sleep(0.3)
-    bookspushed = GPIO.input(bookbuttonpin1)
+    book1pushed = GPIO.input(bookbuttonpin1)
+    book2pushed = GPIO.input(bookbuttonpin2)
     keypushed = GPIO.input(keybuttonpin)
-    logger.info("Buttons push, now in: books " + str(bookspushed) + ", key " + str(keypushed))
+    logger.info("Buttons push, now in: book1 " + str(book1pushed) + ", book2 " + str(book2pushed) + ", key " + str(keypushed))
 
     ## Nobody said it had to be hard!
-    if not bookspushed and state == STATE_NORMAL:
+    if not book1pushed and not book2pushed and state == STATE_NORMAL:
         logger.info("Correct buttons pushed for bathroom state")
         state_machine_bathroom()
     elif not keypushed and state == STATE_KEYTIME:
@@ -313,6 +314,7 @@ GPIO.add_event_detect(bookbuttonpin1, GPIO.BOTH, callback=run_state_machine, bou
 
 bookbuttonpin2 = config.getint("Escape", "bookbuttonpin2")
 GPIO.setup(bookbuttonpin2, GPIO.IN)
+GPIO.add_event_detect(bookbuttonpin2, GPIO.BOTH, callback=run_state_machine, bouncetime=200)
 
 keybuttonpin = config.getint("Escape", "keybuttonpin")
 GPIO.setup(keybuttonpin, GPIO.IN)
