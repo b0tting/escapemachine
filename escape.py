@@ -55,7 +55,7 @@ def clean():
 def run_state_machine(self):
     ## Measuring buttons states before investigating current state
     time.sleep(0.3)
-    bookspushed = GPIO.input(bookbuttonspin)
+    bookspushed = GPIO.input(bookbuttonpin1)
     keypushed = GPIO.input(keybuttonpin)
     logger.info("Buttons push, now in: books " + str(bookspushed) + ", key " + str(keypushed))
 
@@ -307,9 +307,11 @@ logger.setLevel(logging.INFO)
 
 ## Init all pins
 logger.info("Initalizing pins")
-bookbuttonspin = config.getint("Escape", "bookbuttonspin")
-GPIO.setup(bookbuttonspin, GPIO.IN)
-GPIO.add_event_detect(bookbuttonspin, GPIO.BOTH, callback=run_state_machine, bouncetime=200)
+bookbuttonpin1 = config.getint("Escape", "bookbuttonpin1")
+GPIO.setup(bookbuttonpin1, GPIO.IN)
+GPIO.add_event_detect(bookbuttonpin1, GPIO.BOTH, callback=run_state_machine, bouncetime=200)
+
+bookbuttonpin2 = config.getint("Escape", "bookbuttonpin2")
 
 keybuttonpin = config.getint("Escape", "keybuttonpin")
 GPIO.setup(keybuttonpin, GPIO.IN)
@@ -332,17 +334,17 @@ state_machine_start()
 state = STATE_START
 
 if chip_complete_mode:
-    logger.error("CHIP_IO found, running on CHIP mode")
+    logger.error("RPi found, running on Pi mode")
 else:
-    logger.error("CHIP_IO NOT found. Running in fake mode")
+    logger.error("RPi NOT found. Running in fake mode")
 
 debug = config.getboolean("Escape", "debug")
 if debug:
     logger.error("Running in debug mode, app will restart.")
     if chip_complete_mode:
-        logger.error("This might cause weird behaviour on the CHIP, so please don't do that")
+        logger.error("This might cause weird behaviour on the Pi, so please don't do that")
 
 logger.error("Starting app complete")
 
 
-app.run(debug=config.getboolean("Escape", "debug"),host="1.1.1.1",port=config.getint("Escape", "port"),threaded=True)
+app.run(debug=config.getboolean("Escape", "debug"),host="0.0.0.0",port=config.getint("Escape", "port"),threaded=True)
