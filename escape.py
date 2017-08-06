@@ -19,7 +19,7 @@ except Exception:
     GPIO = False
 
 
-## Prereqs: python 2.7 (PYTHON 3 MAG NAAR DE HEL)
+## Prereqs: python 2.7 
 ## apt-get install git build-essential python-dev python-pip flex bison python-pygame -y
 ## pip install flask
 ##
